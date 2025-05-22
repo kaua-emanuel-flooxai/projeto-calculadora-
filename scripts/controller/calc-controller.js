@@ -1,5 +1,8 @@
 class Calccontroller {
   constructor() {
+    this._lastOperator = "";
+    this._lastNumber = "";
+
     this._operation = [];
     this._locale = "pt-BR";
     this._displayCalcEl = document.querySelector("#display");
@@ -55,7 +58,7 @@ class Calccontroller {
     this._operation[this._operation.length - 1] = value;
   }
 
-  isOparator(value) {
+  isOperator(value) {
     return ["+", "-", "*", "%", "/"].indexOf(value) > -1;
   }
 
@@ -67,16 +70,27 @@ class Calccontroller {
     }
   }
 
+  getResult() {
+    return eval(this._operation.join(""));
+  }
+
   calc() {
+    let last = "";
+    this._lastOperator = this.getLastItem();
+
     if (this._operation.length > 3) {
-      last = this._operation.pop();
-    } else {
+      let firstItem = this._operation[0];
+      this._operation = [firstItem, this._lastOperator, this.lastNumber];
     }
 
-    let last = this._operation.pop();
+    if (this._operation.length > 3) {
+      last = this._operation.pop();
+      this._lastNumber = this.getResult();
+    } else if (this._operation.length > 3) {
+      this.lastNumber = this.getLastItem(false);
+    }
 
-    let result = eval(this._operation.join(""));
-
+    let result = this.getResult();
     if (last == "%") {
       result /= 100;
       this._operation = [result];
@@ -89,22 +103,33 @@ class Calccontroller {
     this.setLastNumberToDisplay();
   }
 
-  setLastNumberToDisplay() {
-    let lastNumber = "";
+  getLastItem(isOperator = true) {
+    let lastItem = "";
 
     for (let i = this._operation.length - 1; i >= 0; i--) {
-      if (!this.isOparator(this._operation[i])) {
-        lastNumber = this._operation[i];
-        break;
+      if (isOperator) {
+        if (this.isOperator(this._operation[i]) == isOperator) {
+          lastItem = this._operation[i];
+          break;
+        }
+        if (lastItem)
+          lastItem = isOperator ? this._lastOperator : this._lastNumber;
       }
     }
+
+    return lastItem;
+  }
+
+  setLastNumberToDisplay() {
+    let lastNumber = this.getLastItem(false);
+
     if (!lastNumber) lastNumber = 0;
     this.displayCalc = lastNumber || 0;
   }
 
   addOperation(value) {
     if (isNaN(this.getLastOperation())) {
-      if (this.isOparator(value)) {
+      if (this.isOperator(value)) {
         this.setLastOperation(value);
       } else if (isNaN(value)) {
         console.log(value);
@@ -112,7 +137,7 @@ class Calccontroller {
         this.pushOperation(value);
       }
     } else {
-      if (this.isOparator(value)) {
+      if (this.isOperator(value)) {
         this.pushOperation(value);
         this.setLastNumberToDisplay();
       } else {
