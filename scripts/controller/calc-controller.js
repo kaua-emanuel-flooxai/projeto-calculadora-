@@ -43,9 +43,10 @@ class Calccontroller {
       });
     });
   }
-
   clearAll() {
     this._operation = [];
+    this.lastNumber = "";
+    this.lastOperator = "";
     this.setLastNumberToDisplay();
   }
 
@@ -112,8 +113,9 @@ class Calccontroller {
           lastItem = this._operation[i];
           break;
         }
-        if (lastItem)
+        if (!lastItem) {
           lastItem = isOperator ? this._lastOperator : this._lastNumber;
+        }
       }
     }
 
@@ -131,18 +133,16 @@ class Calccontroller {
     if (isNaN(this.getLastOperation())) {
       if (this.isOperator(value)) {
         this.setLastOperation(value);
-      } else if (isNaN(value)) {
-        console.log(value);
       } else {
         this.pushOperation(value);
+        this.setLastNumberToDisplay();
       }
     } else {
       if (this.isOperator(value)) {
         this.pushOperation(value);
-        this.setLastNumberToDisplay();
       } else {
         let newValue = this.getLastOperation().toString() + value.toString();
-        this.setLastOperation(parseInt(value));
+        this.setLastOperation(parseFloat(newValue));
 
         this.setLastNumberToDisplay();
       }
@@ -151,6 +151,17 @@ class Calccontroller {
 
   setError() {
     this.displayCalc = "error";
+  }
+
+  addDot() {
+    let lastOparation = this.getLastOperation();
+
+    if (this.isOperator(lastOparation) || !lastOparation) {
+      this.pushOperation("0.");
+    } else {
+      this.setLastOperation(lastOparation.toString() + ".");
+    }
+    this.setLastNumberToDisplay();
   }
 
   execBtn(value) {
@@ -188,7 +199,7 @@ class Calccontroller {
         break;
 
       case "ponto":
-        this.addOperation(".");
+        this.addDot(".");
         break;
 
       case "0":
