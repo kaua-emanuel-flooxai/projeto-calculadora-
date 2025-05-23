@@ -1,5 +1,7 @@
 class Calccontroller {
   constructor() {
+    this._Audio = new Audio("click.mp3");
+    this._AudioOnOff = false;
     this._lastOperator = "";
     this._lastNumber = "";
 
@@ -9,6 +11,7 @@ class Calccontroller {
     this._dateCalcEl = document.querySelector("#data");
     this._timeCalcEl = document.querySelector("#hora");
     this._currentDate;
+
     this.initialize();
     this.initButtonsEvents();
     this.initKeyBoard();
@@ -22,10 +25,30 @@ class Calccontroller {
     }, 1000);
 
     this.setLastNumberToDisplay();
+    this.pasteFromClipKeyBoard();
+
+    document.querySelectorAll(".btn-ac").forEach((btn) => {
+      btn.addEventListener("dblclick", (e) => {
+        this.ToggleAudio();
+      });
+    });
+  }
+
+  ToggleAudio() {
+    this._AudioOnOff = !this._AudioOnOff;
+  }
+
+  playAudio() {
+    if (this._AudioOnOff) {
+      this._Audio.currentTime = 0;
+      this._Audio.play();
+    }
   }
 
   initKeyBoard() {
-    document.addEventListener("keyUp", (e) => {
+    document.addEventListener("keyup", (e) => {
+      this.playAudio();
+
       switch (e.key) {
         case "Escape":
           this.clearAll();
@@ -64,7 +87,27 @@ class Calccontroller {
         case "9":
           this.addOperation(parseInt(e.key));
           break;
+
+        case "c":
+          if (e.ctrlKey) this.copyToKeyBoard();
+          break;
       }
+    });
+  }
+
+  copyToKeyBoard() {
+    let input = document.createElement("input");
+    input.value = this.displayCalc;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("Copy");
+    input.remove();
+  }
+
+  pasteFromClipKeyBoard() {
+    document.addEventListener("paste", (e) => {
+      let text = e.clipboardData.getData("Text");
+      this.displayCalc = parseFloat(text);
     });
   }
 
@@ -105,6 +148,10 @@ class Calccontroller {
     this._operation[this._operation.length - 1] = value;
   }
 
+  getLastOperation() {
+    return this._operation[this._operation.length - 1];
+  }
+
   isOperator(value) {
     return ["+", "-", "*", "%", "/"].indexOf(value) > -1;
   }
@@ -112,9 +159,7 @@ class Calccontroller {
   pushOperation(value) {
     if (this.isOperator(value)) {
       const lastItem = this._operation[this._operation.length - 1];
-
       if (this.isOperator(lastItem)) {
-        // Substitui o último operador por outro
         this._operation[this._operation.length - 1] = value;
         return;
       }
@@ -129,17 +174,11 @@ class Calccontroller {
 
   getResult() {
     try {
-      let operation = this._operation.join("");
-
-      // Remove operadores no final da expressão (como "3-", "5*")
-      while (this.isOperator(operation[operation.length - 1])) {
-        operation = operation.slice(0, -1);
-      }
-
-      return eval(operation);
+      return eval(this._operation.join(""));
     } catch (e) {
-      this.setError();
-      return 0;
+      setTimeout(() => {
+        this.setError();
+      }, 1);
     }
   }
 
@@ -189,7 +228,6 @@ class Calccontroller {
 
   setLastNumberToDisplay() {
     let lastNumber = this.getLastItem(false);
-
     if (!lastNumber) lastNumber = 0;
     this.displayCalc = lastNumber;
   }
@@ -231,10 +269,13 @@ class Calccontroller {
     } else {
       this.setLastOperation(lastOperation.toString() + ".");
     }
+
     this.setLastNumberToDisplay();
   }
 
   execBtn(value) {
+    this.playAudio();
+
     switch (value) {
       case "ac":
         this.clearAll();
@@ -290,10 +331,6 @@ class Calccontroller {
     }
   }
 
-  getLastOperation() {
-    return this._operation[this._operation.length - 1];
-  }
-
   setDisplayDateTime() {
     this.displayDate = this.currentDate.toLocaleDateString(this._locale);
     this.displayTime = this.currentDate.toLocaleTimeString(this._locale);
@@ -320,6 +357,11 @@ class Calccontroller {
   }
 
   set displayCalc(value) {
+    if (value.toString().length > 10) {
+      this.setError();
+      return false;
+    }
+
     this._displayCalcEl.textContent = value;
   }
 
